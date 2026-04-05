@@ -155,26 +155,6 @@ sudo docker run --rm \
 0 8 2 * * /usr/bin/docker run --rm --name cert-bind-dogecloud --env-file /opt/cert-bind/cert-bind.env -v /opt/cert-bind/certs:/work -v /opt/cert-bind/acme-home:/root/.acme.sh cert-bind-dogecloud:latest >> /var/log/cert-bind-dogecloud.log 2>&1
 ```
 
-说明：
-
-1. crontab 规则会持久化保存，服务器在 1 号和 15 号重启后不会丢失。
-2. 需要确保 cron 服务开机自启（Debian/Ubuntu 常见服务名为 cron，CentOS/RHEL 常见服务名为 crond）。
-3. 如果机器在计划时间点关机，传统 cron 不会补跑；如需补跑可使用 anacron 或 systemd timer（Persistent=true）。
-
-### 5) 镜像导出与导入（可选）
-
-```sh
-sudo docker save -o cert-bind-dogecloud_latest.tar cert-bind-dogecloud:latest
-sudo docker load -i cert-bind-dogecloud_latest.tar
-```
-
-如果导入后显示镜像名或 TAG 为 none，可重新打标签：
-
-```sh
-sudo docker image ls
-sudo docker tag <IMAGE_ID> cert-bind-dogecloud:latest
-```
-
 ## 中国大陆网络说明（acme.sh 安装）
 
 当本机没有 acme.sh 且访问 GitHub 不稳定时，可加 --acme-cn。
