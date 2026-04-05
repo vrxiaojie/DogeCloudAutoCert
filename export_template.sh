@@ -27,7 +27,7 @@ export DOMAIN_ROOT="example.com"
 # export OUTPUT_DIR="$PWD"
 
 # 证书备注（上传到多吉云时显示）
-# export DOGE_CERT_NOTE="LE-vrxiaojie.top-$(date +%F)"
+# export DOGE_CERT_NOTE="LE-example.com-$(date +%F)"
 
 # 申请测试环境（true/false），建议联调时使用 true
 # export USE_STAGING="false"

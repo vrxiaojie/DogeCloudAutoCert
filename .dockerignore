@@ -1,0 +1,10 @@
+*
+!auto_cert_bind.sh
+!Dockerfile
+!.dockerignore
+!docker-entrypoint.sh
+!acme.sh/
+!acme.sh/dnsapi/
+!acme.sh/acme.sh
+!acme.sh/dnsapi/dns_cf.sh
+!README.md

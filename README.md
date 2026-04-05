@@ -1,4 +1,4 @@
-# auto_cert_bind.sh 使用说明
+# Cert Bind DogeCloud使用说明
 
 ## 这个脚本能做什么
 
@@ -13,7 +13,7 @@
 
 ## 你需要准备的信息
 
-### 必填（所有模式都要）
+### 必填
 
 1. DOGE_ACCESS_KEY：多吉云 AccessKey。
 2. DOGE_SECRET_KEY：多吉云 SecretKey。
@@ -29,7 +29,7 @@
 ### 建议填写
 
 1. LETSENCRYPT_EMAIL：真实邮箱。尤其在首次注册 ACME 账号、或使用 --acme-cn 安装时建议显式提供。
-2. DOMAIN_ROOT：主域名，默认是 vrxiaojie.top。
+2. DOMAIN_ROOT：主域名。
 
 ## 快速开始
 
@@ -72,6 +72,107 @@ source ./export.sh
 6. 中国大陆网络下安装 acme.sh：
 ```sh
 ./auto_cert_bind.sh --acme-cn
+```
+
+## Docker 使用（编译与运行）
+
+### 1) 构建镜像
+
+在项目根目录执行：
+
+```sh
+sudo docker build -t cert-bind-dogecloud:latest .
+```
+
+如果默认基础镜像源不可达，可通过 BASE_IMAGE 切换：
+
+```sh
+sudo docker build \
+	--build-arg BASE_IMAGE=hub.rat.dev/library/alpine:3.21 \
+	-t cert-bind-dogecloud:latest .
+```
+
+### 2) 准备 env-file
+
+示例文件（例如 /opt/cert-bind/cert-bind.env）：
+
+```env
+DOGE_ACCESS_KEY=你的DogeCloudAccessKey
+DOGE_SECRET_KEY=你的DogeCloudSecretKey
+CF_API_TOKEN=你的CloudflareToken
+DOMAIN_ROOT=example.com
+BIND_DOMAINS=cdn.example.com,static.example.com
+ACME_INSTALL_EMAIL=abc@example.com
+
+# 可选项
+DO_BIND=true
+AUTO_DELETE_OLD=false
+FORCE_RENEW=false
+USE_STAGING=false
+```
+
+env-file 注意事项：
+
+1. 每行一个 KEY=VALUE。
+2. 不要写 export。
+3. 等号两边不要有空格。
+
+### 3) 运行容器
+
+建议持久化两个目录：
+
+1. /work：导出证书文件。
+2. /root/.acme.sh：保存 acme.sh 安装状态与账户数据，避免每次容器重建都重新安装。
+
+示例：
+
+```sh
+sudo mkdir -p /opt/cert-bind/certs /opt/cert-bind/acme-home
+
+sudo docker run --rm \
+	--name cert-bind-dogecloud \
+	--env-file /opt/cert-bind/cert-bind.env \
+	-v /opt/cert-bind/certs:/work \
+	-v /opt/cert-bind/acme-home:/root/.acme.sh \
+	cert-bind-dogecloud:latest
+```
+
+如需传入脚本参数（例如强制续签）：
+
+```sh
+sudo docker run --rm \
+	--env-file /opt/cert-bind/cert-bind.env \
+	-v /opt/cert-bind/certs:/work \
+	-v /opt/cert-bind/acme-home:/root/.acme.sh \
+	cert-bind-dogecloud:latest --force
+```
+
+### 4) 每月自动执行（crontab）
+
+每月 2 号早上 8 点执行一次：
+
+```cron
+0 8 2 * * /usr/bin/docker run --rm --name cert-bind-dogecloud --env-file /opt/cert-bind/cert-bind.env -v /opt/cert-bind/certs:/work -v /opt/cert-bind/acme-home:/root/.acme.sh cert-bind-dogecloud:latest >> /var/log/cert-bind-dogecloud.log 2>&1
+```
+
+说明：
+
+1. crontab 规则会持久化保存，服务器在 1 号和 15 号重启后不会丢失。
+2. 需要确保 cron 服务开机自启（Debian/Ubuntu 常见服务名为 cron，CentOS/RHEL 常见服务名为 crond）。
+3. 如果机器在计划时间点关机，传统 cron 不会补跑；如需补跑可使用 anacron 或 systemd timer（Persistent=true）。
+
+### 5) 镜像导出与导入（可选）
+
+```sh
+sudo docker save -o cert-bind-dogecloud_latest.tar cert-bind-dogecloud:latest
+sudo docker load -i cert-bind-dogecloud_latest.tar
+```
+
+如果导入后显示镜像名或 TAG 为 none，可重新打标签：
+
+```sh
+sudo docker image ls
+sudo docker tag <IMAGE_ID> cert-bind-dogecloud:latest
 ```
 
 ## 中国大陆网络说明（acme.sh 安装）
